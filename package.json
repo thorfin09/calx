@@ -8,6 +8,7 @@
     "apps/server"
   ],
   "scripts": {
+    "build": "node build.js",
     "dev:web": "npm run dev -w apps/web",
     "dev:server": "npm run dev -w apps/server",
     "dev": "npx concurrently --kill-others \"npm run dev:web\" \"npm run dev:server\"",
