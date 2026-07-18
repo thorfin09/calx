@@ -1,0 +1,43 @@
+:root {
+  --bg-primary: #fafafa;
+  --bg-secondary: #ffffff;
+  --text-primary: #171717;
+  --text-secondary: #4d4d4d;
+  --text-muted: #8f8f8f;
+  --border-color: #ebebeb;
+  
+  --primary: #171717;
+  --success: #0070f3; /* Vercel Blue doubles as success */
+  --error: #ee0000;
+
+  --font-stack: "Geist Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+  --font-mono: "Geist Mono", "SF Mono", JetBrains Mono, monospace;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #000000;
+  --text-primary: #ededed;
+  --text-secondary: #a0a0a0;
+  --text-muted: #666666;
+  --border-color: #222222;
+  
+  --primary: #ededed;
+  --success: #0070f3;
+  --error: #ee0000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-stack);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s, color 0.2s;
+}

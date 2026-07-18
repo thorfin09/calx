@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calx — 100x Faster Calculations | Quant Aptitude Booster</title>
+  <meta name="description" content="Boost your quantitative aptitude. Practice math calculations 10 minutes daily with addition, subtraction, multiplication, division, square root, and cube root.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header>
+    <div class="container nav-container">
+      <div class="logo">
+        <svg class="logo-icon-svg" viewBox="0 0 32 32" width="28" height="28" style="flex-shrink:0;">
+          <circle cx="16" cy="16" r="16" fill="#0f172a" />
+          <path d="M19.5 9.5a7 7 0 1 0 0 13h2.5a9.5 9.5 0 1 1 0-19h-2.5z" fill="#ffffff" />
+          <path d="M19 14.5h5.5v3H19z" fill="#06b6d4" />
+          <path d="M20.25 12v8l3.5-4-3.5-4z" fill="#06b6d4" />
+        </svg>
+        <span class="logo-text">Calx</span>
+      </div>
+      
+      <div class="nav-controls">
+        <!-- Language Switcher -->
+        <button id="lang-toggle" class="control-btn" aria-label="Switch Language">
+          Hindi
+        </button>
+        
+        <!-- Light/Dark Mode Switcher -->
+        <button id="theme-toggle" class="control-btn" aria-label="Toggle Theme">
+          <svg id="sun-icon" class="theme-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+          <svg id="moon-icon" class="theme-icon hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+        </button>
+
+        <a href="http://localhost:5173/?mode=login" class="btn btn-outline" data-i18n="login">Login</a>
+        <a href="http://localhost:5173/?mode=signup" class="btn btn-dark" data-i18n="signup">Sign Up</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" style="position: relative; overflow: hidden;">
+    <div class="hero-gradient-bg"></div>
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="badge" data-i18n="quant-badge">Quant Aptitude Booster</div>
+        <h1 data-i18n="hero-title">Make your calculation speed 100x faster with Calx.</h1>
+        <p data-i18n="hero-desc">Calx is a simple, sleek, and highly effective mental calculation trainer designed for competitive exams. By practicing just 10 minutes daily, you build rapid numerical recognition and sharpen your mathematical intuition.</p>
+        <div class="hero-actions">
+          <a href="http://localhost:5173" class="btn btn-dark btn-lg" data-i18n="start-btn">Start Practice Runs</a>
+          <button id="download-apk-btn" class="btn btn-outline btn-lg" data-i18n="download-apk">Download Android APK</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="info-section">
+    <div class="container">
+      <h2 class="section-title" data-i18n="why-calx-title">Why use Calx?</h2>
+      <div class="grid-three">
+        <div class="info-card">
+          <div class="info-icon">⚡</div>
+          <h3 data-i18n="reason-1-title">100x Calculation Speed</h3>
+          <p data-i18n="reason-1-desc">Regular training enables sub-second processing of numeric equations, giving you an edge in competitive math and quantitative aptitude sections.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">🧠</div>
+          <h3 data-i18n="reason-2-title">10 Mins Daily Routine</h3>
+          <p data-i18n="reason-2-desc">Short, focused sessions prevent fatigue while building long-term neural recall paths for numerical operations.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">📊</div>
+          <h3 data-i18n="reason-3-title">Aptitude Score Tracking</h3>
+          <p data-i18n="reason-3-desc">Submit scores from either your mobile app or web console to view your mathematical speed progression over time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- App Features (Topics & Levels) -->
+  <section class="features-section">
+    <div class="container">
+      <h2 class="section-title" data-i18n="coverage-title">Complete Math Operations Coverage</h2>
+      <p class="section-subtitle" data-i18n="coverage-desc">Train your mind on comprehensive quantitative topics across four specific difficulty tiers.</p>
+      
+      <div class="grid-two">
+        <!-- Math Topics -->
+        <div class="feature-panel">
+          <h3 data-i18n="topics-header">Mathematical Practice Topics</h3>
+          <ul class="clean-list">
+            <li><strong>+</strong> <span data-i18n="op-add">Addition</span></li>
+            <li><strong>-</strong> <span data-i18n="op-sub">Subtraction</span></li>
+            <li><strong>×</strong> <span data-i18n="op-mul">Multiplication</span></li>
+            <li><strong>÷</strong> <span data-i18n="op-div">Division</span></li>
+            <li><strong>√</strong> <span data-i18n="op-sqrt">Square Root</span></li>
+            <li><strong>∛</strong> <span data-i18n="op-cbrt">Cube Root</span></li>
+            <li><strong>⚙</strong> <span data-i18n="op-mix">Custom Mix & Match</span></li>
+          </ul>
+        </div>
+        
+        <!-- Difficulty Levels -->
+        <div class="feature-panel">
+          <h3 data-i18n="levels-header">Difficulty Configurations</h3>
+          <ul class="clean-list">
+            <li><strong class="lvl-badge green" data-i18n="lvl-easy">Easy</strong> <span data-i18n="lvl-easy-desc">Basic single-digit drills for swift warmups.</span></li>
+            <li><strong class="lvl-badge yellow" data-i18n="lvl-med">Medium</strong> <span data-i18n="lvl-med-desc">Double-digit additions and multiplication tables.</span></li>
+            <li><strong class="lvl-badge orange" data-i18n="lvl-hard">Hard</strong> <span data-i18n="lvl-hard-desc">Triple-digit sums and large square/cube roots.</span></li>
+            <li><strong class="lvl-badge red" data-i18n="lvl-adv">Advanced</strong> <span data-i18n="lvl-adv-desc">Aggressive arithmetic combinations to test extreme limits.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Download APK Modal/Popup Simulation -->
+  <div id="apk-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 data-i18n="modal-title">Calx Mobile App</h3>
+      <p data-i18n="modal-desc">Your download will start shortly. You can install this APK on any Android phone to practice calculation runs on the go.</p>
+      <div class="modal-actions">
+        <button id="close-modal-btn" class="btn btn-dark" data-i18n="modal-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-container">
+      <span>Calx &copy; 2026. <span data-i18n="footer-text">Built for mathematical dominance.</span></span>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
