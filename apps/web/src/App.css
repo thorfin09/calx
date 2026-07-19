@@ -1070,5 +1070,99 @@ h3 {
   border-color: var(--text-muted) !important;
 }
 
+/* Mobile Responsive Overrides */
+@media (max-width: 768px) {
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1000;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15);
+  }
 
+  .app-main {
+    padding: 1.25rem;
+    gap: 1.5rem;
+  }
 
+  .practice-console {
+    padding: 1.5rem 1.25rem;
+    min-height: auto;
+  }
+
+  .config-view h2 {
+    font-size: 1.35rem;
+    text-align: center;
+  }
+
+  .config-desc {
+    text-align: center;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .option-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+
+  .option-grid-four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .option-btn {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* Math Game Play View on Mobile */
+  .math-problem-display {
+    font-size: 2.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .math-answer-form input {
+    max-width: 100%;
+    padding: 0.7rem 1rem;
+    font-size: 1.15rem;
+  }
+
+  /* Leaderboard & Analytics Metrics */
+  .analytics-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .metric-card {
+    padding: 1rem 0.5rem;
+  }
+
+  .metric-val {
+    font-size: 1.5rem;
+  }
+
+  .results-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .results-actions .btn {
+    width: 100%;
+  }
+
+  .analytics-table th, 
+  .analytics-table td {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.78rem;
+  }
+
+  .main-nav-tabs {
+    gap: 0.8rem;
+  }
+
+  .tab-link {
+    font-size: 0.85rem;
+  }
+}

@@ -71,7 +71,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('drill'); // 'drill' or 'leaderboard'
 
   // Sidebar State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
 
   // Auth Modal State
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
