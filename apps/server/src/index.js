@@ -8,18 +8,42 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// CORS — allow web app, mobile app, and local dev
+const allowedOrigins = [
+  'https://calx-three.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5000',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, true); // allow all for now — mobile has no origin header
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(express.static('public'));
 
+// Strip channel_binding from Neon URL if present (causes pg client errors on some versions)
+const rawDbUrl = process.env.DATABASE_URL || '';
+const cleanDbUrl = rawDbUrl.replace('&channel_binding=require', '').replace('?channel_binding=require', '');
+
 // PostgreSQL Connection Pool Setup
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: cleanDbUrl,
   ssl: {
     rejectUnauthorized: false
-  }
+  },
+  // Production-grade pool settings
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 // Database Schema Initialization & Migrations
@@ -382,4 +406,22 @@ app.listen(PORT, () => {
   console.log(` Listening on Port: ${PORT}                `);
   console.log(` Connecting to: Neon Cloud PostgreSQL     `);
   console.log(`===========================================`);
+
+  // Self-ping every 14 minutes to prevent Render free-tier cold starts
+  // Render spins down free dynos after 15 minutes of inactivity
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(async () => {
+    try {
+      const https = require('https');
+      const http = require('http');
+      const client = SELF_URL.startsWith('https') ? https : http;
+      client.get(`${SELF_URL}/`, (res) => {
+        console.log(`[KeepAlive] Self-ping OK — status ${res.statusCode}`);
+      }).on('error', (e) => {
+        console.warn('[KeepAlive] Self-ping failed:', e.message);
+      });
+    } catch (e) {
+      console.warn('[KeepAlive] Error:', e.message);
+    }
+  }, 14 * 60 * 1000); // every 14 minutes
 });

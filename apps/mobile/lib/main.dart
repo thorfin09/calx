@@ -1312,7 +1312,7 @@ class _AuthBottomSheetState extends State<AuthBottomSheet> {
           Uri.parse('${widget.baseUrl}/api/auth/signin'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'username': username, 'password': password}),
-        );
+        ).timeout(const Duration(seconds: 30));
         final body = json.decode(res.body);
         if (body['success'] == true) {
           widget.onSuccess(body['user']);
@@ -1340,7 +1340,7 @@ class _AuthBottomSheetState extends State<AuthBottomSheet> {
             'phone_number': phone,
             'email': email
           }),
-        );
+        ).timeout(const Duration(seconds: 30));
         final body = json.decode(res.body);
         if (body['success'] == true) {
           widget.onSuccess(body['user']);
@@ -1349,8 +1349,13 @@ class _AuthBottomSheetState extends State<AuthBottomSheet> {
           setState(() => _errorMsg = body['error'] ?? 'Sign Up failed.');
         }
       }
-    } catch (e) {
-      setState(() => _errorMsg = 'Failed to reach database server.');
+    } on Exception catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('timeout') || msg.contains('socket') || msg.contains('connection')) {
+        setState(() => _errorMsg = '⏳ Server is waking up (cold start). Please wait a moment and try again.');
+      } else {
+        setState(() => _errorMsg = 'Network error. Please check your connection and retry.');
+      }
     } finally {
       setState(() => _loading = false);
     }
