@@ -649,6 +649,11 @@ function App() {
         </div>
       </aside>
 
+      {/* Mobile Sidebar Backdrop */}
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Main Panel */}
       <main className="app-main">
         {/* Top Tab Bar Switching between Practice and Global Leaderboards */}
