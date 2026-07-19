@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const CalxApp());
@@ -238,6 +239,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  static const String _currentVersion = '1.0.0';
   String _baseUrl = 'http://localhost:5000';
   List<dynamic> _recentScores = [];
   bool _isLoading = false;
@@ -294,6 +296,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     _loadScores();
+    Future.delayed(Duration.zero, () {
+      if (mounted) _checkForUpdates(true);
+    });
+  }
+
+  Future<void> _checkForUpdates(bool silent) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.github.com/repos/thorfin09/calx/releases/latest'),
+        headers: {'Accept': 'application/vnd.github.v3+json'},
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final latestVersion = data['tag_name']?.toString().replaceAll('v', '') ?? '';
+        
+        if (latestVersion.isNotEmpty && latestVersion != _currentVersion) {
+          String? downloadUrl;
+          final assets = data['assets'] as List?;
+          if (assets != null) {
+            for (var asset in assets) {
+              final name = asset['name']?.toString() ?? '';
+              if (name.endsWith('.apk')) {
+                downloadUrl = asset['browser_download_url'];
+                break;
+              }
+            }
+          }
+          downloadUrl ??= data['html_url'];
+
+          if (mounted && downloadUrl != null) {
+            _showUpdateDialog(latestVersion, downloadUrl);
+          }
+        } else {
+          if (!silent && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('App is up to date!')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (!silent && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to check for updates.')),
+        );
+      }
+    }
+  }
+
+  void _showUpdateDialog(String version, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update Available', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('A new version (v$version) of Calx is available. Would you like to download the update?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Later'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final uri = Uri.parse(url);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+            child: const Text('Update Now'),
+          )
+        ],
+      ),
+    );
   }
 
   Future<void> _loadScores() async {
@@ -617,6 +693,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
 
                 const Spacer(),
+
+                OutlinedButton(
+                  onPressed: () => _checkForUpdates(false),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: isDark ? const Color(0xFF222222) : const Color(0xFFEBEBEB)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(widget.lang == 'en' ? 'Check for Updates' : 'अपडेट के लिए जांचें', style: const TextStyle(fontSize: 12)),
+                ),
+                const SizedBox(height: 12),
 
                 // Settings Row
                 Row(
