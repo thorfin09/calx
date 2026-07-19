@@ -133,14 +133,17 @@ async function openModal() {
       const data = await res.json();
       const assets = data.assets || [];
       const apkAsset = assets.find(asset => asset.name.endsWith('.apk'));
-      const downloadUrl = apkAsset ? apkAsset.browser_download_url : data.html_url;
+      const downloadUrl = apkAsset ? apkAsset.browser_download_url : null;
       if (downloadUrl) {
         window.location.href = downloadUrl;
+        return;
       }
     }
   } catch (e) {
-    console.error('Failed to trigger latest release download:', e);
+    console.error('Failed to trigger latest release download from GitHub:', e);
   }
+  // Fallback: download the local APK hosted on the landing page server
+  window.location.href = 'app-release.apk';
 }
 
 function closeModal() {
