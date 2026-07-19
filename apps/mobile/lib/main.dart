@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_file/open_file.dart';
 
 void main() {
   runApp(const CalxApp());
@@ -247,6 +248,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _avgScore = 0;
   Map<String, dynamic>? _currentUser;
 
+  bool _isDownloading = false;
+  double _downloadProgress = 0.0;
+  String _downloadStatus = '';
+
   // Selected Configurations
   List<String> _selectedTopics = ['add'];
   String _selectedLevel = 'easy';
@@ -346,6 +351,83 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _downloadAndInstallApk(String url) async {
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _downloadStatus = 'Connecting...';
+    });
+
+    try {
+      final client = http.Client();
+      final request = http.Request('GET', Uri.parse(url));
+      final response = await client.send(request).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final totalBytes = response.contentLength ?? 0;
+        var downloadedBytes = 0;
+        
+        final tempDir = Directory.systemTemp;
+        final apkFile = File('${tempDir.path}/calx_update.apk');
+        if (await apkFile.exists()) {
+          await apkFile.delete();
+        }
+
+        final sink = apkFile.openWrite();
+
+        await for (var chunk in response.stream) {
+          downloadedBytes += chunk.length;
+          sink.add(chunk);
+
+          if (totalBytes > 0) {
+            setState(() {
+              _downloadProgress = downloadedBytes / totalBytes;
+              _downloadStatus = 'Downloading: ${(_downloadProgress * 100).toStringAsFixed(0)}%';
+            });
+          } else {
+            setState(() {
+              _downloadStatus = 'Downloading: ${(downloadedBytes / 1024 / 1024).toStringAsFixed(1)} MB';
+            });
+          }
+        }
+
+        await sink.flush();
+        await sink.close();
+        client.close();
+
+        setState(() {
+          _downloadStatus = 'Installing update...';
+          _downloadProgress = 1.0;
+        });
+
+        final result = await OpenFile.open(apkFile.path);
+        
+        setState(() {
+          _isDownloading = false;
+        });
+
+        if (result.type != ResultType.done) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Installation failed: ${result.message}')),
+            );
+          }
+        }
+      } else {
+        throw Exception('Server returned code: ${response.statusCode}');
+      }
+    } catch (e) {
+      setState(() {
+        _isDownloading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    }
+  }
+
   void _showUpdateDialog(String version, String url) {
     showDialog(
       context: context,
@@ -358,12 +440,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const Text('Later'),
           ),
           ElevatedButton(
-            onPressed: () async {
+            onPressed: () {
               Navigator.pop(context);
-              final uri = Uri.parse(url);
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
+              _downloadAndInstallApk(url);
             },
             child: const Text('Update Now'),
           )
@@ -485,7 +564,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final t = _translations[widget.lang]!;
     final isDark = widget.themeMode == ThemeMode.dark;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(
         title: const Text(
           'Calx',
@@ -703,6 +782,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Text(widget.lang == 'en' ? 'Check for Updates' : 'अपडेट के लिए जांचें', style: const TextStyle(fontSize: 12)),
                 ),
+                const SizedBox(height: 6),
+                Center(
+                  child: Text(
+                    '${widget.lang == 'en' ? 'Version' : 'संस्करण'} $_currentVersion',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey, fontFamily: 'monospace'),
+                  ),
+                ),
                 const SizedBox(height: 12),
 
                 // Settings Row
@@ -761,6 +847,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
           BottomNavigationBarItem(icon: const Icon(Icons.emoji_events), label: t['leaderboardTab']!),
         ],
       ),
+    );
+
+    return Stack(
+      children: [
+        scaffold,
+        if (_isDownloading)
+          Positioned.fill(
+            child: Material(
+              color: Colors.black.withOpacity(0.6),
+              child: Center(
+                child: Card(
+                  color: isDark ? const Color(0xFF171717) : const Color(0xFFFFFFFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: isDark ? const Color(0xFF222222) : const Color(0xFFEBEBEB)),
+                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.lang == 'en' ? 'Installing Update' : 'अपडेट इंस्टॉल हो रहा है',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _downloadStatus,
+                          style: const TextStyle(fontSize: 14, color: Colors.grey, fontFamily: 'monospace'),
+                        ),
+                        const SizedBox(height: 20),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: LinearProgressIndicator(
+                            value: _downloadProgress > 0 ? _downloadProgress : null,
+                            backgroundColor: isDark ? const Color(0xFF222222) : const Color(0xFFF1F5F9),
+                            color: const Color(0xFF06B6D4),
+                            minHeight: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
