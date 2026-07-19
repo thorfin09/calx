@@ -241,7 +241,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   static const String _currentVersion = '1.0.0';
-  String _baseUrl = 'http://localhost:5000';
+  // Production backend URL — hardcoded, no user-editable config
+  static const String _baseUrl = 'https://calx-server.onrender.com';
   List<dynamic> _recentScores = [];
   bool _isLoading = false;
   int _streak = 5;
@@ -286,11 +287,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedBaseUrl = prefs.getString('calx_base_url') ?? 'http://10.0.2.2:5000';
     final savedUserStr = prefs.getString('calx_user');
 
     setState(() {
-      _baseUrl = savedBaseUrl;
       if (savedUserStr != null) {
         try {
           _currentUser = json.decode(savedUserStr);
@@ -454,8 +453,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadScores() async {
     setState(() => _isLoading = true);
     try {
+      // 30s timeout to handle Render.com cold starts gracefully
       final response = await http.get(Uri.parse('$_baseUrl/api/scores')).timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 30),
       );
       if (response.statusCode == 200) {
         final res = json.decode(response.body);
@@ -472,7 +472,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final statsResponse = await http.get(Uri.parse('$_baseUrl/api/status')).timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 30),
       );
       if (statsResponse.statusCode == 200) {
         final res = json.decode(statsResponse.body);
@@ -483,14 +483,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
     } catch (e) {
-      debugPrint("API offline.");
-      setState(() {
-        _recentScores = [
-          { 'id': 1, 'player': 'guest_mobile_user', 'score': 18, 'totalQuestions': 20, 'timestamp': DateTime.now().toIso8601String() },
-          { 'id': 2, 'player': 'guest_mobile_user', 'score': 14, 'totalQuestions': 15, 'timestamp': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String() }
-        ];
-        _avgScore = 16;
-      });
+      debugPrint("Server cold start or offline — using offline defaults.");
+      // Keep existing data if we already have some, otherwise show defaults
+      if (_recentScores.isEmpty) {
+        setState(() {
+          _recentScores = [];
+        });
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -509,39 +508,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _loadScores();
   }
 
-  void _openSettings() {
-    final controller = TextEditingController(text: _baseUrl);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_translations[widget.lang]!['apiConfig']!, style: const TextStyle(fontWeight: FontWeight.w700)),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: _translations[widget.lang]!['serverBaseUrl']!,
-            hintText: 'http://10.0.2.2:5000',
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(_translations[widget.lang]!['cancel']!),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              prefs.setString('calx_base_url', controller.text);
-              setState(() => _baseUrl = controller.text);
-              if (context.mounted) Navigator.pop(context);
-              _loadScores();
-            },
-            child: Text(_translations[widget.lang]!['save']!),
-          )
-        ],
-      ),
-    );
-  }
 
   void _showAuthModal(String mode) {
     showModalBottomSheet(
@@ -576,9 +542,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        actions: [
-          IconButton(onPressed: _openSettings, icon: const Icon(Icons.settings_outlined)),
-        ],
+        actions: const [],
         backgroundColor: isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
         foregroundColor: isDark ? const Color(0xFFEDEDED) : const Color(0xFF171717),
         elevation: 0,
@@ -952,8 +916,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       ..._topics.entries.map((entry) {
                         final isSelected = _selectedTopics.contains(entry.key);
+                        // In dark mode the selected bg is near-white (0xFFEDEDED) → use black text
+                        // In light mode the selected bg is near-black (0xFF171717) → use white text
+                        final selectedTextColor = isDark ? Colors.black : Colors.white;
+                        final unselectedTextColor = isDark ? const Color(0xFFCCCCCC) : const Color(0xFF444444);
                         return ChoiceChip(
-                          label: Text(entry.value, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : (isDark ? Colors.grey : Colors.black))),
+                          label: Text(entry.value, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? selectedTextColor : unselectedTextColor)),
                           selected: isSelected,
                           onSelected: (selected) {
                             setState(() {
@@ -967,12 +935,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             });
                           },
                           selectedColor: isDark ? const Color(0xFFEDEDED) : const Color(0xFF171717),
-                          backgroundColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF4F4F5),
+                          side: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFD4D4D8), width: 1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         );
                       }),
                       ChoiceChip(
-                        label: Text(widget.lang == 'en' ? 'Select All' : 'सभी चुनें', style: TextStyle(fontSize: 11, color: _selectedTopics.length == 8 ? Colors.white : (isDark ? Colors.grey : Colors.black))),
+                        label: Text(
+                          widget.lang == 'en' ? 'Select All' : 'सभी चुनें',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: _selectedTopics.length == 8
+                                ? (isDark ? Colors.black : Colors.white)
+                                : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF444444)),
+                          ),
+                        ),
                         selected: _selectedTopics.length == 8,
                         onSelected: (selected) {
                           setState(() {
@@ -984,8 +962,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           });
                         },
                         selectedColor: isDark ? const Color(0xFFEDEDED) : const Color(0xFF171717),
-                        backgroundColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF4F4F5),
+                        side: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFD4D4D8), width: 1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       )
                     ],
                   ),
@@ -996,6 +975,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 6,
+                    runSpacing: 6,
                     children: _levels.entries.map((entry) {
                       final isSelected = _selectedLevel == entry.key;
                       Color activeColor = const Color(0xFF171717);
@@ -1005,14 +985,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (entry.key == 'advanced') activeColor = const Color(0xFFEF4444);
 
                       return ChoiceChip(
-                        label: Text(entry.value, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : (isDark ? Colors.grey : Colors.black))),
+                        label: Text(entry.value, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? Colors.white : (isDark ? const Color(0xFFCCCCCC) : const Color(0xFF444444)))),
                         selected: isSelected,
                         onSelected: (selected) {
                           if (selected) setState(() => _selectedLevel = entry.key);
                         },
                         selectedColor: activeColor,
-                        backgroundColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF4F4F5),
+                        side: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFD4D4D8), width: 1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       );
                     }).toList(),
                   ),
@@ -1102,8 +1083,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   height: 100,
                   alignment: Alignment.center,
                   child: Text(
-                    _isLoading ? 'Syncing...' : 'No sessions recorded yet. Start training!',
+                    _isLoading ? 'Connecting to server...' : 'No sessions recorded yet. Start training!',
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    textAlign: TextAlign.center,
                   ),
                 )
               : ListView.builder(
@@ -1135,15 +1117,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildDurationChip(dynamic value, String label) {
     final isDark = widget.themeMode == ThemeMode.dark;
     final isSelected = _selectedDuration == value;
+    // Dark selected bg is near-white → text must be black
+    final selectedTextColor = isDark ? Colors.black : Colors.white;
+    final unselectedTextColor = isDark ? const Color(0xFFCCCCCC) : const Color(0xFF444444);
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 11, color: isSelected ? Colors.white : (isDark ? Colors.grey : Colors.black))),
+      label: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isSelected ? selectedTextColor : unselectedTextColor)),
       selected: isSelected,
       onSelected: (selected) {
         if (selected) setState(() => _selectedDuration = value);
       },
       selectedColor: isDark ? const Color(0xFFEDEDED) : const Color(0xFF171717),
-      backgroundColor: Colors.transparent,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      backgroundColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF4F4F5),
+      side: BorderSide(color: isDark ? const Color(0xFF333333) : const Color(0xFFD4D4D8), width: 1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }
@@ -1171,8 +1157,9 @@ class _LeaderboardViewState extends State<LeaderboardView> {
   Future<void> _fetchLeaderboard() async {
     setState(() => _loading = true);
     try {
+      // Extended timeout for Render.com cold starts (server may take up to 30s to wake)
       final res = await http.get(Uri.parse('${widget.baseUrl}/api/leaderboard')).timeout(
-        const Duration(seconds: 3),
+        const Duration(seconds: 30),
       );
       if (res.statusCode == 200) {
         final body = json.decode(res.body);
