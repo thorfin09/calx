@@ -125,8 +125,22 @@ const apkBtn = document.getElementById('download-apk-btn');
 const modal = document.getElementById('apk-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 
-function openModal() {
+async function openModal() {
   modal.classList.remove('hidden');
+  try {
+    const res = await fetch('https://api.github.com/repos/thorfin09/calx/releases/latest');
+    if (res.ok) {
+      const data = await res.json();
+      const assets = data.assets || [];
+      const apkAsset = assets.find(asset => asset.name.endsWith('.apk'));
+      const downloadUrl = apkAsset ? apkAsset.browser_download_url : data.html_url;
+      if (downloadUrl) {
+        window.location.href = downloadUrl;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to trigger latest release download:', e);
+  }
 }
 
 function closeModal() {
